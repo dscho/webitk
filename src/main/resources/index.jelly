@@ -1,6 +1,4 @@
-<!--
-  This view is used to render the installed plugins page.
--->
 <div>
-  This plugin is a sample to explain how to write a Jenkins plugin.
+  This plugin enables cached cross-compilation of ITK snippets for use in
+  Java programs and dynamic languages.
 </div>
