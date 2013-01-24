@@ -1,5 +1,7 @@
 package org.scijava.webitk;
 
+import org.kohsuke.stapler.DataBoundConstructor;
+
 import hudson.Extension;
 import hudson.model.JobProperty;
 import hudson.model.JobPropertyDescriptor;
@@ -9,6 +11,17 @@ public class WebITKJobProperty extends JobProperty<Job<?, ?>> {
 static {
 	System.err.println("**** We got a job property");
 }
+
+	private boolean enabled;
+
+	@DataBoundConstructor
+	public WebITKJobProperty(boolean enabled) {
+		this.enabled = enabled;
+	}
+
+	public boolean getEnabled() {
+		return enabled;
+	}
 
 	@Override
 	public void setOwner(Job<?, ?> owner) {

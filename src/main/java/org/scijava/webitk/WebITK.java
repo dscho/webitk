@@ -4,13 +4,15 @@ import hudson.Extension;
 import hudson.Functions;
 import hudson.Plugin;
 import hudson.model.Describable;
-import hudson.model.ItemGroup;
 import hudson.model.RootAction;
 import hudson.model.TopLevelItem;
-import hudson.model.AbstractItem;
 import hudson.model.Api;
+import hudson.model.Computer;
 import hudson.model.Descriptor;
 import hudson.model.Job;
+import hudson.model.Node;
+import hudson.remoting.Callable;
+import hudson.slaves.NodeProperty;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -24,7 +26,6 @@ import javax.servlet.http.HttpServletResponse;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 
-import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
@@ -53,11 +54,11 @@ public String say(String parameter) {
 
 	public String getIconFileName() {
 		return Functions.getResourcePath()
-				+ "/plugin/webitk/images/webitk.png";
+				+ "/webitk/images/webitk.png";
 	}
 
 	public String getUrlName() {
-		return "plugin/webitk";
+		return "webitk";
 	}
 
 	@Override
@@ -90,12 +91,46 @@ public String say(String parameter) {
 			writer.write("<h1>WebITK</h1>\n");
 			writer.write("Enabled: " + enabled + "<br/>\n");
 			writer.write("List\n<ul>\n");
-			for (final Job job : jenkins.getAllItems(Job.class)) {
+			for (final Job<?, ?> job : jenkins.getAllItems(Job.class)) {
 				writer.write("<li>" + job.getName() + " (" + job.getFullName() + ")</li>\n");
 			}
 			writer.write("</ul>\n");
 			final TopLevelItem item = jenkins.getItemMap().get("blub123");
 			writer.write("got " + item + "<br />\n");
+			writer.write("Nodes<br /><ul>\n");
+			for (final Node node : jenkins.getNodes()) {
+				writer.write("<li>node " + node.getDisplayName());
+				for (final NodeProperty<?> property : node.getNodeProperties()) {
+					writer.write("<li>node property " + property.toString() + "; " + property.getClass());
+					if (property instanceof WebITKNodeProperty) {
+						writer.write("<li> yesss " + ((WebITKNodeProperty)property).getEnabled());
+					} else {
+						writer.write("<li> no " + WebITKNodeProperty.class + " != " + property.getClass() + ", loaders: " + WebITKNodeProperty.class.getClassLoader() + " != " + property.getClass().getClassLoader());
+					}
+				}
+				WebITKNodeProperty nodeProperty = node.getNodeProperties().get(WebITKNodeProperty.class);
+				if (nodeProperty != null) {
+					writer.write("<li>itk " + nodeProperty.getEnabled());
+				}
+				else writer.write("<li>no itk property");
+			}
+			writer.write("</ul>");
+			/*
+			Node node = jenkins.getNode("master");
+			writer.write("node " + node.getDisplayName());
+			for (final NodeProperty<?> property : node.getNodeProperties()) {
+				writer.write(" node property " + property.toString() + "; " + property.getClass());
+			}
+			*/
+			writer.write("Computers<br /><ul>");
+			for (Computer computer : jenkins.getComputers()) {
+				writer.write("<li>computer " + computer.getDisplayName() + ", " + computer.getName() + "; " + getOSAndArch(computer));
+				WebITKNodeProperty nodeProperty = computer.getNode().getNodeProperties().get(WebITKNodeProperty.class);
+				if (nodeProperty != null) {
+					writer.write("<li> itk " + nodeProperty.getEnabled());
+				}
+			}
+			writer.write("</ul>");
 			writer.close();
 			return;
 		}
@@ -103,6 +138,23 @@ public String say(String parameter) {
 		URL url = getClass().getResource(path);
 		LOG.info("Serving " + path + "; " + url);
 		response.serveFile(request, url);
+	}
+
+	private static String getOSAndArch(final Computer computer) {
+		try {
+			return computer.getChannel().call(new Callable<String, RuntimeException>() {
+				public String call() {
+					String os = System.getProperty("os.name");
+					if (os == null) os = "(null)";
+					String arch = System.getProperty("os.arch");
+					if (arch == null) arch = "(null)";
+					return os + "/" + arch;
+				}
+			});
+		} catch (Throwable t) {
+t.printStackTrace();
+			return null;
+		}
 	}
 
 	public DescriptorImpl getDescriptor() {

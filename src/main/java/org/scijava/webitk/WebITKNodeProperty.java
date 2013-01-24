@@ -1,11 +1,11 @@
 package org.scijava.webitk;
 
-import org.kohsuke.stapler.DataBoundConstructor;
-
 import hudson.Extension;
 import hudson.model.Node;
 import hudson.slaves.NodeProperty;
 import hudson.slaves.NodePropertyDescriptor;
+
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class WebITKNodeProperty extends NodeProperty<Node> {
 	private boolean enabled;
@@ -28,7 +28,7 @@ public class WebITKNodeProperty extends NodeProperty<Node> {
 
 		@Override
 		public String getDisplayName() {
-			return "WebITK";
+			return "WebITK9";
 		}
 
 	}

@@ -9,10 +9,7 @@
     Creates a text field that shows the value of the "name" property.
     When submitted, it will be passed to the corresponding constructor parameter.
   -->
-  <f:section title="WebITK7">
-    <f:entry title="Enabled" field="enabled"
-      description="Check if WebITK should be enabled">
-      <f:checkbox />
-    </f:entry>
+  <f:section title="WebITK action">
   </f:section>
 </j:jelly>
+
