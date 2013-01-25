@@ -4,19 +4,26 @@ import hudson.Extension;
 import hudson.Functions;
 import hudson.Plugin;
 import hudson.model.Describable;
+import hudson.model.Label;
+import hudson.model.ParametersAction;
 import hudson.model.RootAction;
 import hudson.model.TopLevelItem;
+import hudson.model.AbstractProject;
 import hudson.model.Api;
+import hudson.model.Cause;
 import hudson.model.Computer;
 import hudson.model.Descriptor;
 import hudson.model.Job;
 import hudson.model.Node;
+import hudson.model.labels.LabelAssignmentAction;
+import hudson.model.queue.SubTask;
 import hudson.remoting.Callable;
 import hudson.slaves.NodeProperty;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.Writer;
 import java.net.URL;
 import java.util.logging.Logger;
 
@@ -135,6 +142,50 @@ public String say(String parameter) {
 			return;
 		}
 
+		final String[] split = path.split("/");
+		if (split.length > 3 && "".equals(split[0])) {
+			String jobName = split[1];
+System.err.println("job: " + jobName);
+			final Jenkins jenkins = Jenkins.getInstance();
+			final TopLevelItem item = jenkins.getItemMap().get(jobName);
+			if (item != null && item instanceof AbstractProject) {
+				AbstractProject<?, ?> project = (AbstractProject<?, ?>)item;
+				Writer writer = response.getWriter();
+				writer.write("job " + jobName + "; class " + project.getClass());
+				project.scheduleBuild2(0, new Cause.RemoteCause(request.getRemoteHost(), "webITK: " + path), new LabelAssignmentAction() {
+					
+					public String getUrlName() {
+						return null;
+					}
+					
+					public String getIconFileName() {
+						return null;
+					}
+					
+					public String getDisplayName() {
+						return null;
+					}
+					
+					public Label getAssignedLabel(SubTask arg0) {
+						/*
+						Computer computer = jenkins.getComputer(split[2]);
+						if (computer == null) {
+							Computer[] list = jenkins.getComputers();
+System.err.println("Could not find computer '" + split[2]);
+for (Computer computer2 : list) System.err.println("computer: " + computer2.getName());
+						}
+						Node node = computer == null ? null : computer.getNode();
+						if (node != null) {
+							return node.getSelfLabel();
+						}
+						*/
+						return jenkins.getLabel(split[2]);
+					}
+				});
+				writer.close();
+			}
+			return;
+		}
 		URL url = getClass().getResource(path);
 		LOG.info("Serving " + path + "; " + url);
 		response.serveFile(request, url);
